@@ -1,7 +1,7 @@
 
 # OpenSeadragon shaders by openSeadragonGL*
 
-Modified version of [openSeadragonGL][6] plugin:
+Modified version of original **openSeadragonGL plugin**:
 
 - use multiple shaders and freely switch between them (even based on the origin of tile that is being drawn, e.g. different shaders for different tile sources)
 - use multiple sourceTiles and select which ones are being modified via webGL and which ones are passed directly to OSD (if you don't modify the tile, don't bother re-drawing the data to the same data)
@@ -27,7 +27,6 @@ Then create the plugin instance, the first parameter must be OpenSeadragon insta
 
 ```js
 var seaGL = new openSeadragonGL(openSD, true);
-});
 ```
 
 Set your desided shader sources. The order corresponds to the compiled program index and can be used later to switch between programs:
