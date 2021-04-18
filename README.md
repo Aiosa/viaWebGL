@@ -11,6 +11,16 @@ Modified version of original **openSeadragonGL plugin**:
 
 **Tested only with canvas!**
 
+
+### Examples
+
+Browse `demo/rect` or `demo/dzi` for examples on usage. Both examples demonstrate a bit of power of this modified version and are the same as the examples in the original plugin repository: the first one does the transparency
+inside a fragment shader, i.e. instead of setting it for the whole `tiledImage` canvas, you can cherrypick the pixels and their opacities (so unlike the original example, the text is truly opaque unlike the gradient background).
+The second example demonstrates the possibility to run any number of shaders you want. Both use `redraw(...)` to show how much the performance can be improved when redrawing tiles from cache.
+
+
+Run the examples using any localhost server: the easiest is to download *VS Code* and install *Live Server* extension. Then go to any `.html` file meant for display and in the context menu (right click) select *Open with live server*.
+
 ### Swift guide
 
 First, initialize your OSD:
@@ -36,7 +46,6 @@ Set your desided shader sources. The order corresponds to the compiled program i
 seaGL.setShaders('/path/to/shaders/vertex/shaderA.glsl', '/path/to/shaders/fragment/shader1.glsl'); //index 0
 seaGL.setShaders('/path/to/shaders/vertex/shaderB.glsl', '/path/to/shaders/fragment/shader2.glsl'); //index 1
 seaGL.setShaders('/path/to/shaders/vertex/shaderC.glsl', '/path/to/shaders/fragment/shader3.glsl'); //index 2
-});
 ```
 
 There are several functions that allow you work with shaders:
@@ -127,7 +136,7 @@ seaGL.button({
         useShader = !useShader;
 
         //redraw tileSource at index 0, shader at index 0
-        seaGL.redraw(this.openSD.world, 1, 0);  
+        seaGL.redraw(this.openSD.world, 0, 0);  
     }
 }); 
 ```
