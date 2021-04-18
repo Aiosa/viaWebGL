@@ -8,8 +8,11 @@ Modified version of original **openSeadragonGL plugin**:
 - support transparency (alpha channel in fragment shader will be respected)
 - be able to redraw tiles with different shader / different uniform variables from cache if possible: **without re-requesting the tiles from the server**
 
+**NOTE:**
+ - navigator updates are not handled for now, will probably publish the fix for it later
 
-**Tested only with canvas!**
+
+**Works only with canvas!**
 
 
 ### Examples
