@@ -3,6 +3,8 @@ var DOJO = DOJO || {};
 //
 // J.Viewer - test webGL overlay atop OpenSeaDragon
 //
+// NOTE: we modified also 'rect' shaders because we can set transparency directly in shader, unlike original project 
+//
 //-----------------------------------
 
 DOJO.Viewer = function(terms) {
@@ -33,7 +35,7 @@ DOJO.Viewer.prototype.init = function() {
 
     // Make a link to webGL
     var seaGL = new openSeadragonGL(openSD, true); // we set mixedShaders = true (not necessary, 'true' is default value, but to explicitly show it)
-    
+
     seaGL.setShaders('../shaders/vertex/rect.glsl', '../shaders/fragment/rect.glsl');
 
     // NOTE: we can't turn ON/OFF shader if we initialize openSeadragonGL with mixedShaders = false
