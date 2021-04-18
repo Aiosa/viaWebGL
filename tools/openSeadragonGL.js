@@ -80,7 +80,6 @@ openSeadragonGL.prototype = {
         this.viaGL.forceSwitchShader(programIndex); 
 
         var imageTile = world.getItemAt(idx);
-        console.log(imageTile);
 
         // Raise tstamp to force redraw
         this.upToDateTStamp = Date.now();
@@ -153,7 +152,6 @@ openSeadragonGL.prototype = {
                 e.tile.webglRefresh = this.upToDateTStamp + 1;
 
                 // Render a webGL canvas to an input canvas using cached version
-                console.log(e.tiledImage);
                 var output = this.viaGL.toCanvas(e.tile.origData, e);
         
                 // Note: you can comment out clearing if you don't use transparency 

@@ -21,6 +21,12 @@ The second example demonstrates the possibility to run any number of shaders you
 
 Run the examples using any localhost server: the easiest is to download *VS Code* and install *Live Server* extension. Then go to any `.html` file meant for display and in the context menu (right click) select *Open with live server*.
 
+
+### Template
+
+You can start from any example and develop your own app, or use `template` - all-in-one `html` for lightweight start with opsenSaedragonGL. Simply modify the file with your own code and run it! It just shows two images - one original, 
+one with edge detection shader with an range input to change opacity at will. But unlike most examples, the opacity is not modified on a canvas, but **sent to a fragment shader and re-drawn on every update** - pretty smooth, isn't it? ;)
+
 ### Swift guide
 
 First, initialize your OSD:

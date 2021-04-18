@@ -20,8 +20,7 @@ SOBEL.Viewer.prototype.init = function() {
     this.openSD = OpenSeadragon({
         tileSources: this.source,
         prefixUrl: this.iconPrefix,
-        id: 'viaWebGL',
-        debugMode: true
+        id: 'viaWebGL'
     });
 
     // No need for selecting which mode drawing to use, ony one available - the most optimal one
