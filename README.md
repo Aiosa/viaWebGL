@@ -1,4 +1,65 @@
 
+# OpenSeadragon shaders by openSeadragonGL*
+
+Modified version of [openSeadragonGL][6] plugin:
+
+- use multiple shaders and freely switch between them (even based on the origin of tile that is being drawn, e.g. different shaders for different tile sources)
+- use multiple sourceTiles and select which ones are being modified via webGL and which ones are passed directly to OSD (if you don't modify the tile, don't bother re-drawing the data to the same data)
+- support transparency
+- be able to redraw tiles with different shader / different uniform variables from cache if possible: **without re-requesting the tiles from the server** (I actually shared this one, see https://github.com/openseadragon/openseadragon/issues/866#issuecomment-820449459)
+
+
+** Tested only with canvas! **
+
+### Swift guide
+
+First, initialize your OSD:
+
+```js
+var openSD = OpenSeadragon({
+    tileSources: 'URL TO PYRAMIDAL IMAGE SOURCE',
+    prefixUrl: this.iconPrefix,
+    id: 'HTML DIV ID TO ATTACH CANVAS TO'
+});
+```
+
+Then create the plugin instance, the first parameter must be OpenSeadragon instance, the other is a boolean variable, whether you allow or disallow (better performance) mixing shader usage (see `gl-drawing` return value).
+
+```js
+var seaGL = new openSeadragonGL(openSD, true);
+});
+```
+
+Set your desided shader sources. The order corresponds to the compiled program index and can be used later to switch between programs:
+
+```js
+// program idx=0 (shader1) will be used as default: 
+seaGL.setShaders('/path/to/shaders/vertex/shader1.glsl', '/path/to/shaders/fragment/shader1.glsl'); 
+seaGL.setShaders('/path/to/shaders/vertex/shader2.glsl', '/path/to/shaders/fragment/shader2.glsl');
+seaGL.setShaders('/path/to/shaders/vertex/shader3.glsl', '/path/to/shaders/fragment/shader3.glsl');
+});
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 [__Get viaWebGL + openSeadragonGL stable release!__][13] — [See how it works][16]
 
 ## [OpenSeadragon][7] shaders by [openSeadragonGL][6]

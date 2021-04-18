@@ -32,46 +32,51 @@ DOJO.Viewer.prototype.init = function() {
     });
 
     // Make a link to webGL
-    var seaGL = new openSeadragonGL(openSD);
-    seaGL.vShader = '../shaders/vertex/rect.glsl';
-    seaGL.fShader = '../shaders/fragment/rect.glsl';
+    var seaGL = new openSeadragonGL(openSD, true); // we set mixedShaders = true (not necessary, 'true' is default value, but to explicitly show it)
+    
+    seaGL.setShaders('../shaders/vertex/rect.glsl', '../shaders/fragment/rect.glsl');
 
-    // Draw per tile
-    var draw = function(callback, e) {
-
-        var image = e.tiledImage;
-        var source = image.source;
-        if (source.top) {
-            var via = this.viaGL;
-            via.bounds = e.tile.bounds;
-            var y = via.bounds.y + via.bounds.height;
-            via.flip_y = image.getBounds().height - y;
-            image.setOpacity(.8);
-            callback(e);
-        }
-    }
-
-    // Load for glsl
-    var GLloaded = function(program) {
-        this.wherer = this.gl.getUniformLocation(program, 'u_tile_where');
-        this.shaper = this.gl.getUniformLocation(program, 'u_tile_shape');
-    }
-
-    // Draw for glsl
-    var GLdrawing = function() {
-        this.gl.uniform2f(this.wherer, this.bounds.x, this.flip_y);
-        this.gl.uniform2f(this.shaper, this.bounds.width, this.bounds.height);
-    }
-
-    seaGL.addHandler('tile-drawing',draw);
-    seaGL.addHandler('gl-loaded',GLloaded);
-    seaGL.addHandler('gl-drawing',GLdrawing);
-
-    // Add a custom button
+    // NOTE: we can't turn ON/OFF shader if we initialize openSeadragonGL with mixedShaders = false
+    var useShader = true;
     seaGL.button({
         tooltip: 'Toggle shaders',
         prefix: this.iconPrefix,
-        name: 'shade'
+        name: 'shade',
+        onClick: function() {
+            useShader = !useShader;
+            seaGL.redraw(this.openSD.world, 1, 0);  //redraw tileSource at index 1, shader at index 0 (the only one)
+        }
+    });
+
+    seaGL.addHandler('tile-loaded', function(callback, e) {
+     
+
+        if (e.tiledImage.source.top) {
+            var y = e.tile.bounds.y + e.tile.bounds.height;
+            e.tile.flip_y = image.getBounds().height - y;
+
+            // NOTE: we can either call callback() here to avoid executing callback on other tile source (and drawing it using webGL),
+            // or we can control it using 'gl-drawing' boolean return value
+
+            // NOTE: not valid to remove the callback now if you set mixShaders = false
+        }
+
+        //we allow the OSD_GL interface take care of our tile any time
+        callback(e);
+     });
+
+
+    seaGL.addHandler('gl-loaded', function(program) {
+        this.wherer = this.gl.getUniformLocation(program, 'u_tile_where');
+        this.shaper = this.gl.getUniformLocation(program, 'u_tile_shape');
+    });
+
+
+    seaGL.addHandler('gl-drawing', function(imageData, e) {
+        this.gl.uniform2f(this.wherer, e.tile.bounds.x, e.tile.flip_y);
+        this.gl.uniform2f(this.shaper, e.tile.bounds.width, e.tile.bounds.height);
+
+        return useShader && e.tiledImage.source.top; //use webGL only for 'anything' source and if allowed
     });
 
 

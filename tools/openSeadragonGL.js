@@ -1,41 +1,116 @@
 /*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~
 /* openSeadragonGL - Set Shaders in OpenSeaDragon with viaWebGL
+/*
+/* CHANGES MADE BY
+/* Jiří Horák, 2021
 */
-openSeadragonGL = function(openSD) {
+openSeadragonGL = function(openSD, canMixShaders = true) {
 
     /* OpenSeaDragon API calls
     ~*~*~*~*~*~*~*~*~*~*~*~*/
     this.interface = {
-        'tile-loaded': function(e) {
-            // Set the imageSource as a data URL and then complete
-            var output = this.viaGL.toCanvas(e.image);
-            e.image.onload = e.getCompletionCallback();
-            e.image.src = output.toDataURL();
-        },
-        'tile-drawing': function(e) {
-            // Render a webGL canvas to an input canvas
-            var input = e.rendered.canvas;
-            e.rendered.drawImage(this.viaGL.toCanvas(input), 0, 0, input.width, input.height);
+        'tile-loaded': canMixShaders ? function(e) { // Can draw tile source with shader and switch to using no shader and vice versa
+            if (! e.image) return;
+            // Set correct dimensions (problematic border tiles)
+            this.viaGL.setDimensions(e.tile.sourceBounds.width, e.tile.sourceBounds.height);
+            var output = this.viaGL.toCanvas(e.image, e);
+            
+            if (output !== null) {
+                var canvas = document.createElement( 'canvas' )
+                canvas.width = e.tile.sourceBounds.width;
+                canvas.height = e.tile.sourceBounds.height;
+                var renderedContext = canvas.getContext('2d');
+                renderedContext.drawImage(output, 0, 0);
+                // Save the result as tile context so it will be used from now on
+                e.tile.context2D = renderedContext;  
+            }
+            // Else let openseadragon handle the event
+
+            // Save the original image for furture use, note when the tile was last rendered and re-draw if too old
+            e.tile.origData = e.image;
+            e.tile.webglRefresh = Date.now();
+
+        } : function(e) { // This is more efficient but drawing the same tile source WITH or WITHOUT shader depending on some condition is invalid 
+            if (! e.image) return;
+    
+            this.viaGL.setDimensions(e.tile.sourceBounds.width, e.tile.sourceBounds.height);
+            var output = this.viaGL.toCanvas(e.image, e);
+            
+            if (output !== null) {
+                e.tile.origData = e.image;      
+                var canvas = document.createElement( 'canvas' )
+                canvas.width = e.tile.sourceBounds.width;
+                canvas.height = e.tile.sourceBounds.height;
+                var renderedContext = canvas.getContext('2d');
+                renderedContext.drawImage(output, 0, 0);
+                e.tile.context2D = renderedContext;  
+                e.tile.webglRefresh = Date.now();
+            }
         }
     };
     this.defaults = {
         'tile-loaded': function(callback, e) {
             callback(e);
-        },
-        'tile-drawing': function(callback, e) {
-            if (e.tile.loaded !==1) {
-                e.tile.loaded = 1;
-                callback(e);
-            }
         }
     };
+
     this.openSD = openSD;
     this.viaGL = new ViaWebGL();
+    this.upToDateTStamp = Date.now();
 };
 
 openSeadragonGL.prototype = {
+    /**
+     * Set program shaders. Just forwards the call to viaGL, for easier access.
+     * @param {string} vertexShader program vertex shader, recommended is to use the same one
+     *  for all programs but if you need different...
+     * @param {string} fragmentShader program fragment shader
+     */
+    setShaders: function(vertexShader, fragmentShader) {
+        this.viaGL.setShaders(vertexShader, fragmentShader);
+    },
+
+    /**
+     * Redraw the scene using cached images.
+     * @param {World} world - openSeadragon world instance
+     * @param {integer} programIndex - what shaders to use for the redrawing: note this can still be overriden if you change shaders based on tile you draw
+     */
+    redraw: function(world, idx, programIndex) {
+        //redraw was called we probably changed uniform data, reset
+        this.viaGL.forceSwitchShader(programIndex); 
+
+        var imageTile = world.getItemAt(idx);
+        console.log(imageTile);
+
+        // Raise tstamp to force redraw
+        this.upToDateTStamp = Date.now();
+
+        imageTile._drawer.context.clearRect(0, 0, imageTile._drawer.context.canvas.width, imageTile._drawer.context.canvas.height);
+        world.draw();
+    },
+
+    /**
+     * Access to webGL context
+     * @returns webGL context
+     */
+    GL: function() {
+        return this.viaGL.gl;
+    },
+
+    //////////////////////////////////////////////////////////////////////////////
+    ///////////// YOU PROBABLY DON'T WANT TO READ/CHANGE FUNCTIONS BELOW
+    //////////////////////////////////////////////////////////////////////////////
+
     // Map to viaWebGL and openSeadragon
     init: function() {
+        // Instead of choosing loaded/drawing, always use loaded
+        this.addHandler('tile-loaded');
+
+        // If no gl-drawing specified, use default one - always use shader
+        if (!this['gl-drawing']) {
+            this['gl-drawing'] = function() { return true; }
+        }
+
         var open = this.merger.bind(this);
         this.openSD.addHandler('open',open);
         return this;
@@ -49,6 +124,7 @@ openSeadragonGL.prototype = {
             this[key] = custom;
         }
     },
+
     // Merge with viaGL
     merger: function(e) {
         // Take GL height and width from OpenSeaDragon
@@ -70,18 +146,36 @@ openSeadragonGL.prototype = {
                 handler.call(this, interface, e);
             });
         }
+
+        //hardcoded handler for re-drawing elements from cache
+        var cacheHandler = function(e) {
+            if (e.tile.webglRefresh <= this.upToDateTStamp) {
+                e.tile.webglRefresh = this.upToDateTStamp + 1;
+
+                // Render a webGL canvas to an input canvas using cached version
+                console.log(e.tiledImage);
+                var output = this.viaGL.toCanvas(e.tile.origData, e);
+        
+                // Note: you can comment out clearing if you don't use transparency 
+                e.rendered.clearRect(0, 0, e.tile.sourceBounds.width, e.tile.sourceBounds.height);
+                e.rendered.drawImage(output == null? e.tile.origData : output, 0, 0, e.tile.sourceBounds.width, e.tile.sourceBounds.height);
+            }
+        }.bind(this);
+        this.openSD.addHandler('tile-drawing', cacheHandler);
     },
+
     // Joint keys
     and: function(obj) {
       return Object.keys(obj).filter(Object.hasOwnProperty,this);
     },
+
     // Add your own button to OSD controls
     button: function(terms) {
-
         var name = terms.name || 'tool';
         var prefix = terms.prefix || this.openSD.prefixUrl;
         if (!terms.hasOwnProperty('onClick')){
-            terms.onClick = this.shade;
+            console.error("The specified button does not have 'onClick' property and will do nothing. Removed.")
+            return;
         }
         terms.onClick = terms.onClick.bind(this);
         terms.srcRest = terms.srcRest || prefix+name+'_rest.png';
@@ -92,11 +186,5 @@ openSeadragonGL.prototype = {
         this.openSD.clearControls().buttons.buttons.push(new OpenSeadragon.Button(terms));
         var toolbar = new OpenSeadragon.ButtonGroup({buttons: this.openSD.buttons.buttons});
         this.openSD.addControl(toolbar.element,{anchor: OpenSeadragon.ControlAnchor.TOP_LEFT});
-    },
-    // Switch Shaders on or off
-    shade: function() {
-
-        this.viaGL.on++;
-        this.openSD.world.resetItems();
     }
 }
