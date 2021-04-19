@@ -9,7 +9,8 @@ Modified version of original **openSeadragonGL plugin**:
 - be able to redraw tiles with different shader / different uniform variables from cache if possible: **without re-requesting the tiles from the server**
 
 **NOTE:**
- - navigator updates are not handled for now, will probably publish the fix for it later
+ - navigator updates are not handled for now
+ - implemented only for webGL 1.0, the update for 2.0 is considered (e.g. don't use other than **master** branch)
 
 
 **Works only with canvas!**
@@ -85,6 +86,12 @@ seaGL.addHandler('tile-loaded', function(callback, e) {
 
 ```
 
+
+>
+> If `tile-loaded` is not specified, a default version is used that just calls `callback(e)`.
+>
+
+
 There are two `gl-*` handlers that allow you to perform custom operation on WebGL events. `gl-loaded` is called once a program is set for use, e.g. guaranteed to be called
 on `seaGL.viaGL.forceSwitchShader(index)` call. Use this callback to set custom shader data.
 
@@ -114,6 +121,10 @@ seaGL.addHandler('gl-drawing', function(imageData, e) {
     return true;
 });
 ```
+
+>
+> If `gl-drawing` is not specified, a default version is used that just returns `true`.
+>
 
 ### Re-loading the shaders
 
